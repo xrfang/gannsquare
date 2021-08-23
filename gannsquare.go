@@ -6,13 +6,50 @@ import (
 	"math"
 )
 
-type square [][]float64
+type (
+	square [][]float64
+	colors struct {
+		Cross [2]string
+		Point [2]string
+	}
+)
 
-func (sq square) Dump(w io.Writer) {
-	dw := len(fmt.Sprintf("%d", int(sq[0][0])))
-	style := fmt.Sprintf("%%%d.3f ", dw+4)
+var cs colors = colors{
+	Cross: [2]string{"\033[1;32m", "\033[0m"},
+	Point: [2]string{"\033[1;31m", "\033[0m"},
+}
+
+func (sq square) CellFormat(floatPoints int) string {
+	var dw int
 	for _, r := range sq {
 		for _, c := range r {
+			w := len(fmt.Sprintf("%d", int(c)))
+			if w > dw {
+				dw = w
+			}
+		}
+	}
+	return fmt.Sprintf("%%%d.%df", dw+floatPoints+1, floatPoints)
+}
+
+func (sq square) Dump(w io.Writer) {
+	cf := sq.CellFormat(3)
+	center := len(sq) / 2
+	tty := isTTY(w)
+	for i, r := range sq {
+		for j, c := range r {
+			style := cf + " "
+			if tty {
+				onPoint := false
+				onCross := i == j || i+j == len(sq)-1 || i == center || j == center
+				if onPoint {
+					style = fmt.Sprintf("%s%s%s ", cs.Point[0], cf, cs.Point[1])
+				} else if onCross {
+					style = fmt.Sprintf("%s%s%s ", cs.Cross[0], cf, cs.Cross[1])
+				} else {
+					style = fmt.Sprintf("%s ", cf)
+				}
+			}
 			fmt.Fprintf(w, style, c)
 		}
 		fmt.Fprintln(w)
