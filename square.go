@@ -13,13 +13,15 @@ type (
 		Point [2]string
 	}
 	target struct {
-		Grid   float64 //格子之间的距离（即步长）
-		Expect float64 //需要查找的目标数字
-		Actual float64 //格子中的实际数字
-		Rol    int     //目标所在行
-		Col    int     //目标所在列
-		Ring   int     //目标所处层级（中心为0）
-		Delta  float64 //与最近的辐射线的距离
+		Grid   float64 `json:"grid"`   //格子之间的距离（即步长）
+		Expect float64 `json:"expect"` //需要查找的目标数字
+		Actual float64 `json:"actual"` //格子中的实际数字
+		Row    int     `json:"row"`    //目标所在行
+		Col    int     `json:"col"`    //目标所在列
+		Ring   int     `json:"ring"`   //目标所处层级（中心为0）
+		Axis   float64 `json:"axis"`   //最近的辐射线值
+		Gap    int     `json:"gap"`    //离辐射线的格数
+		diff   float64 //计算过程中使用的内部变量
 	}
 )
 
@@ -42,7 +44,54 @@ func (sq square) CellFormat(floatPoints int) string {
 }
 
 func (sq square) Locate(num float64) *target {
-	return nil //TODO
+	min := 1e308
+	max := -1e308
+	c := len(sq) / 2
+	t := target{Grid: sq[c-1][c] - sq[c][c], Expect: num, diff: 1e308}
+	for i := 0; i < len(sq); i++ {
+		for j := 0; j < len(sq); j++ {
+			if sq[i][j] > max {
+				max = sq[i][j]
+			}
+			if sq[i][j] < min {
+				min = sq[i][j]
+			}
+			diff := math.Abs(sq[i][j] - num)
+			if diff < t.diff {
+				t.Row = i
+				t.Col = j
+				t.Actual = sq[i][j]
+				t.diff = diff
+			}
+		}
+	}
+	if t.Expect < min-t.Grid || t.Expect > max+t.Grid {
+		return nil
+	}
+	t.diff = 1e308
+	onAxis := func(i, j int) bool {
+		return i == j || i+j == len(sq)-1 || i == c || j == c
+	}
+	for k := 0; k < len(sq); k++ {
+		if onAxis(k, t.Col) {
+			diff := math.Abs(sq[k][t.Col] - t.Expect)
+			if diff < t.diff {
+				t.diff = diff
+				t.Axis = sq[k][t.Col]
+			}
+		}
+		if onAxis(t.Row, k) {
+			diff := math.Abs(sq[t.Row][k] - t.Expect)
+			if diff < t.diff {
+				t.diff = diff
+				t.Axis = sq[t.Row][k]
+			}
+		}
+	}
+	t.Gap = int(math.Abs((t.Axis-t.Actual)/t.Grid) + 0.5)
+	ring := math.Max(math.Abs(float64(c-t.Row)), math.Abs(float64(c-t.Col)))
+	t.Ring = int(ring + 0.5)
+	return &t
 }
 
 func (sq square) Dump(w io.Writer) {
