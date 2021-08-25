@@ -1,4 +1,4 @@
-module gannsquare
+module gann
 
 go 1.16
 

@@ -1,4 +1,4 @@
-package gannsquare
+package gann
 
 import (
 	"io"

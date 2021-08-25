@@ -1,11 +1,11 @@
 package main
 
 import (
-	"gannsquare"
+	"gann"
 	"os"
 )
 
 func main() {
-	sq := gannsquare.New(1, 15, 0.125)
+	sq := gann.NewSquare(1, 15, 0.125)
 	sq.Dump(os.Stdout)
 }

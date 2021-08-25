@@ -1,4 +1,4 @@
-package gannsquare
+package gann
 
 import (
 	"fmt"
@@ -11,6 +11,15 @@ type (
 	colors struct {
 		Cross [2]string
 		Point [2]string
+	}
+	target struct {
+		Grid   float64 //格子之间的距离（即步长）
+		Expect float64 //需要查找的目标数字
+		Actual float64 //格子中的实际数字
+		Rol    int     //目标所在行
+		Col    int     //目标所在列
+		Ring   int     //目标所处层级（中心为0）
+		Delta  float64 //与最近的辐射线的距离
 	}
 )
 
@@ -30,6 +39,10 @@ func (sq square) CellFormat(floatPoints int) string {
 		}
 	}
 	return fmt.Sprintf("%%%d.%df", dw+floatPoints+1, floatPoints)
+}
+
+func (sq square) Locate(num float64) *target {
+	return nil //TODO
 }
 
 func (sq square) Dump(w io.Writer) {
@@ -56,7 +69,7 @@ func (sq square) Dump(w io.Writer) {
 	}
 }
 
-func New(start, until, step float64) square {
+func NewSquare(start, until, step float64) square {
 	if start >= until || start < 0 || step <= 0 {
 		panic("invalid argument")
 	}
